@@ -1,0 +1,13 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "Enriched US Healthcare Clinics Output",
+  "description": "Enriched healthcare clinic contact details, DNS/MX-checked emails, social links, Schema.org MedicalOrganization metadata, and corporate chain/DSO classification.",
+  "type": "object",
+  "properties": {
+    "dataset": {
+      "type": "string",
+      "title": "Enriched US Healthcare Clinics Dataset",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
+    }
+  }
+}

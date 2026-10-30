@@ -1,0 +1,52 @@
+{
+  "title": "US Healthcare Clinic Contact, Schema & Chain Detector Input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "startUrls": {
+      "title": "Clinic Website URLs",
+      "type": "array",
+      "description": "List of US medical, dental, audiology, chiropractic, optometry, or veterinary clinic URLs to enrich and screen for corporate chain/DSO ownership.",
+      "editor": "requestListSources",
+      "default": [
+        { "url": "https://pacificaudiology.com/" },
+        { "url": "https://brooklyndentalstudio.com/" },
+        { "url": "https://www.banfield.com/" }
+      ],
+      "prefill": [
+        { "url": "https://pacificaudiology.com/" },
+        { "url": "https://brooklyndentalstudio.com/" },
+        { "url": "https://www.banfield.com/" }
+      ]
+    },
+    "followContactPages": {
+      "title": "Crawl Internal /contact, /about & /locations Pages",
+      "type": "boolean",
+      "description": "Automatically discover and inspect up to 2 internal Contact, About, or Locations pages per clinic domain to maximize email, phone, and ownership detection accuracy.",
+      "default": true
+    },
+    "excludeChainsFromOutput": {
+      "title": "Filter Out Corporate Chains (Keep Only Independent / Needs Review)",
+      "type": "boolean",
+      "description": "When enabled, clinics classified as 'Chain Excluded' are omitted from the output dataset so your CRM only receives independent practices.",
+      "default": false
+    },
+    "customChainKeywords": {
+      "title": "Custom Excluded Corporate / DSO Keywords (Comma-Separated)",
+      "type": "string",
+      "description": "Optional comma-separated brand names or private-equity MSO/DSO groups to flag as 'Chain Excluded' (e.g. 'SmileDirect, RegionaleCare').",
+      "editor": "textfield",
+      "default": "",
+      "prefill": ""
+    },
+    "maxConcurrency": {
+      "title": "Max Concurrent Clinic Requests",
+      "type": "integer",
+      "description": "Maximum number of parallel async HTTP clinic requests.",
+      "default": 5,
+      "minimum": 1,
+      "maximum": 25
+    }
+  },
+  "required": ["startUrls"]
+}

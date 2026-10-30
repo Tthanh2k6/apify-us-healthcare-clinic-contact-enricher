@@ -1,0 +1,22 @@
+{
+  "actorSpecification": 1,
+  "name": "us-healthcare-clinic-contact-enricher",
+  "title": "US Healthcare Clinic Contact, Schema & Chain Detector",
+  "description": "Scrapes and enriches US medical, dental, audiology, chiropractic, and veterinary clinic websites with DNS/MX-verified emails, phone numbers, social profiles (FB, IG, LI, YT, X), Schema.org MedicalOrganization metadata, and automatic Corporate Chain / DSO / Franchise detection (Verified Independent vs Chain Excluded vs Needs Review).",
+  "version": "1.0",
+  "meta": {
+    "templateId": "python-start"
+  },
+  "defaultRunOptions": {
+    "build": "latest",
+    "timeoutSecs": 300,
+    "memoryMbytes": 256
+  },
+  "input": "./input_schema.json",
+  "output": "./output_schema.json",
+  "dockerfile": "../Dockerfile",
+  "readme": "../README.md",
+  "storages": {
+    "dataset": "./dataset_schema.json"
+  }
+}

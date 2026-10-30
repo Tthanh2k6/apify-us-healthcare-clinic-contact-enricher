@@ -1,0 +1,38 @@
+{
+  "actorSpecification": 1,
+  "fields": {},
+  "views": {
+    "overview": {
+      "title": "US Healthcare Clinics Enrichment & Ownership Overview",
+      "transformation": {
+        "fields": [
+          "url",
+          "clinic_name",
+          "specialty_category",
+          "ownership_status",
+          "mx_dns_valid_emails",
+          "phones",
+          "social_profiles",
+          "medical_schema_types",
+          "chain_signals",
+          "status_code"
+        ]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "url": { "label": "Clinic URL", "format": "link" },
+          "clinic_name": { "label": "Clinic Name", "format": "text" },
+          "specialty_category": { "label": "Specialty", "format": "text" },
+          "ownership_status": { "label": "Ownership Status", "format": "text" },
+          "mx_dns_valid_emails": { "label": "Verified Emails (DNS/MX)", "format": "array" },
+          "phones": { "label": "Phone Numbers", "format": "array" },
+          "social_profiles": { "label": "Social Profiles", "format": "object" },
+          "medical_schema_types": { "label": "Schema.org Entities", "format": "array" },
+          "chain_signals": { "label": "Chain / DSO Signals", "format": "array" },
+          "status_code": { "label": "HTTP Status", "format": "number" }
+        }
+      }
+    }
+  }
+}
