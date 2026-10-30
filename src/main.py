@@ -7,9 +7,22 @@ Chain / DSO / Franchise Detection (Verified Independent vs Chain Excluded vs Nee
 """
 import asyncio
 import json
+import os
 import re
 from typing import Any, Dict, List, Optional, Set, Tuple
 from urllib.parse import urljoin, urlparse
+
+FREE_TIER_MAX_ITEMS = 25
+FREE_TIER_CAP_MSG = (
+    "Free-tier run capped at 25 results. Upgrade Apify plan for unlimited scale "
+    "or contact Trung Thanh Tran on Upwork for custom pipelines."
+)
+
+
+def is_free_tier_at_home() -> bool:
+    is_at_home = os.getenv("APIFY_IS_AT_HOME", "").strip().lower() in ("1", "true", "yes")
+    user_is_paying = os.getenv("APIFY_USER_IS_PAYING", "").strip().lower() in ("1", "true", "yes")
+    return is_at_home and not user_is_paying
 
 import httpx
 from bs4 import BeautifulSoup
@@ -553,6 +566,7 @@ async def main() -> None:
             exclude_chains = bool(actor_input.get("excludeChainsFromOutput", False))
             custom_keywords = str(actor_input.get("customChainKeywords", ""))
             concurrency = int(actor_input.get("maxConcurrency", 5))
+            max_items = int(actor_input.get("maxItems", 25))
 
             urls = [
                 item["url"] if isinstance(item, dict) else str(item)
@@ -561,6 +575,17 @@ async def main() -> None:
             ]
             if not urls:
                 urls = [u["url"] for u in DEFAULT_CLINIC_URLS]
+
+            was_capped = False
+            if is_free_tier_at_home() and (len(urls) > FREE_TIER_MAX_ITEMS or max_items > FREE_TIER_MAX_ITEMS):
+                max_items = min(max_items, FREE_TIER_MAX_ITEMS)
+                if len(urls) > FREE_TIER_MAX_ITEMS:
+                    urls = urls[:FREE_TIER_MAX_ITEMS]
+                was_capped = True
+                Actor.log.warning(FREE_TIER_CAP_MSG)
+                await Actor.set_status_message(FREE_TIER_CAP_MSG)
+            else:
+                urls = urls[:max_items]
 
             Actor.log.info(
                 f"Enriching {len(urls)} US healthcare clinics (followContactPages={follow_contact}, "
@@ -573,8 +598,15 @@ async def main() -> None:
                 custom_chain_keywords=custom_keywords,
                 max_concurrency=concurrency,
             )
+            results = results[:max_items]
             await Actor.push_data(results)
             await safe_charge_event("clinic-enriched", count=len(results))
+            if was_capped:
+                await Actor.set_status_message(FREE_TIER_CAP_MSG)
+            else:
+                await Actor.set_status_message(
+                    f"Successfully enriched {len(results)} US healthcare clinic records."
+                )
             Actor.log.info(f"Successfully enriched and pushed {len(results)} healthcare clinic records.")
     else:
         sample_urls = [u["url"] for u in DEFAULT_CLINIC_URLS]

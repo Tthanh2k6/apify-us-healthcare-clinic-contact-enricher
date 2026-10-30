@@ -100,3 +100,9 @@ Built and maintained by **Trung Thanh Tran** (*Python, Playwright, n8n & AI Auto
 - ⚡ **Order Fast-Turnaround Data & Scraping Gigs on Fiverr:** [fiverr.com/trungthnhtrn244](https://www.fiverr.com/trungthnhtrn244)
 - 📦 **Download the Complete Python, AI & n8n Scraper Toolkit Pro (6 CLI Engines + 3 Blueprints):** [trungthanh16.gumroad.com/l/python-ai-automation-n8n-scraper-toolkit-pro](https://trungthanh16.gumroad.com/l/python-ai-automation-n8n-scraper-toolkit-pro)
 - 💻 **GitHub Portfolio:** [github.com/Tthanh2k6](https://github.com/Tthanh2k6)
+
+---
+
+## ⚖️ Legal & Independence Disclaimer
+
+**Nominative Fair Use — Public Non-Authenticated Factual Data Only:** This Actor is an independent software utility that processes exclusively publicly accessible, non-authenticated healthcare clinic web pages at the user's explicit direction. It does not access patient portals, Protected Health Information (PHI / HIPAA records), login walls, or technical access controls, nor does it store or resell proprietary databases. Any corporate healthcare, DSO, or veterinary brand names referenced in ownership classification rules (such as Aspen Dental, Heartland Dental, Banfield, VCA, etc.) are trademarks of their respective owners and are used strictly for descriptive identification purposes (*nominative fair use*). Users act as independent Data Controllers and are solely responsible for ensuring their target URLs, rate limits, and downstream outreach comply with applicable laws (including CAN-SPAM, TCPA, GDPR, and CCPA).
