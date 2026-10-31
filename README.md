@@ -1,22 +1,27 @@
-# US Healthcare Clinic Contact, Schema & Chain Detector (Apify Actor)
+# US Healthcare Clinic Contact and Chain Detector (Apify Actor)
 
-High-speed **Python Async (`httpx` + `BeautifulSoup4` + `DNS/MX Verification`) Apify Actor** purpose-built for healthcare B2B sales teams, medical device manufacturers, dental/audiology wholesalers, SaaS SDRs, and healthcare recruiting agencies targeting **genuinely independent US private practices**.
+An Apify actor written in async Python (`httpx` + `BeautifulSoup4` + `dnspython`). You give it a list of US clinic websites (dental, audiology, veterinary, chiropractic, optometry and similar). For each site it fetches the homepage and up to two internal "contact/about/locations/team" pages, then returns:
 
-Given any list of clinic URLs (from Google Maps scrapers, NPI registries, or CRM exports), this Actor extracts **DNS/MX-verified emails, E.164 US phone numbers, 5-platform social links (`FB, IG, LI, YT, X`), `Schema.org` `MedicalOrganization` metadata**, and automatically classifies every domain into **`Verified Independent`**, **`Chain Excluded`**, or **`Needs Review`** by screening against **38+ major US Dental DSOs, Audiology retail chains, Veterinary consolidators, and Private-Equity MSOs**.
+- email addresses found in the HTML and `mailto:` links, with obvious junk filtered out (asset filenames, `sentry.io`, `wixpress.com`, placeholder domains);
+- `mx_dns_valid_emails`: the subset whose domain has an MX record (or an A record if there is no MX). This is a DNS check on the domain only. It does not check that a mailbox exists;
+- US phone numbers from `tel:` links and visible text, normalized to `+1-XXX-XXX-XXXX`;
+- social links for Facebook, Instagram, LinkedIn, YouTube and X/Twitter (up to 3 each);
+- Schema.org JSON-LD data for medical/local-business types (name, address, specialty, rating, `parentOrganization`);
+- a rough specialty category based on keywords;
+- an ownership guess: `Chain Excluded`, `Needs Review` or `Verified Independent`.
 
----
+## How the ownership guess works
 
-## ✨ Key Engineering Capabilities
+It is a keyword heuristic, not a lookup in any registry:
 
-- **Automatic Corporate Chain / DSO / Franchise Screening:** Identifies national DSOs, retail franchises, and private-equity MSOs (*Aspen Dental, Heartland Dental, Pacific Dental Services, Miracle-Ear, Beltone, HearingLife, Banfield, VCA, BluePearl, The Joint Chiropractic, ATI PT, One Medical, MyEyeDr*, franchise legal disclosures, and `15+` store-locator footprints).
-- **DNS / MX Deliverability Check:** Strips telemetry/asset false positives (`sentry.io`, `wixpress.com`, `.png`, `.webp`) and performs async DNS `MX` + `A` resolution on every discovered email domain (`mx_dns_valid_emails`).
-- **Smart Internal Subpage Crawling:** Automatically inspects `/contact`, `/about`, `/our-practice`, and `/locations` pages (up to 2 internal subpages per clinic) to maximize front-desk/owner contact capture.
-- **Schema.org Healthcare Entity Extraction:** Parses `MedicalOrganization`, `Dentist`, `Physician`, `VeterinaryCare`, `MedicalClinic`, and `LocalBusiness` JSON-LD `@graph` blocks (`address`, `medicalSpecialty`, `aggregateRating`, `parentOrganization`).
-- **256 MB Lightweight Execution:** Pure async `httpx` architecture — zero headless Chromium bloat, enriching hundreds of clinics per minute for pennies.
+1. The domain and HTML are matched against a built-in list of 38 US chains: dental DSOs, hearing-aid retailers, veterinary groups, and chiropractic, PT, urgent-care and optical chains (for example Aspen Dental, Heartland Dental, Miracle-Ear, Beltone, Banfield, VCA, The Joint Chiropractic, ATI PT, One Medical, MyEyeDr). You can add your own keywords with `customChainKeywords`.
+2. A Schema.org `parentOrganization` raises the score.
+3. Franchise wording in the page text (for example "each office is independently owned and operated") raises the score.
+4. Internal store-locator links are counted: 5 or more location paths raise the score, 15 or more push it to "chain".
 
----
+A score of 0.80 or higher gives `Chain Excluded`, 0.45 to 0.80 gives `Needs Review`, and anything lower gives `Verified Independent`. "Verified Independent" only means that none of these signals matched. If a site cannot be fetched, the record comes back as `Needs Review` with the error message in `error`.
 
-## 📥 Input Configuration
+## Input
 
 ```json
 {
@@ -28,17 +33,19 @@ Given any list of clinic URLs (from Google Maps scrapers, NPI registries, or CRM
   "followContactPages": true,
   "excludeChainsFromOutput": false,
   "customChainKeywords": "",
-  "maxConcurrency": 5
+  "maxConcurrency": 5,
+  "maxItems": 25
 }
 ```
 
----
+Runs on the Apify free tier are capped at 25 URLs.
 
-## 📤 Sample Output Record
+## Output record (example shape)
 
 ```json
 {
   "url": "https://pacificaudiology.com/",
+  "input_url": "https://pacificaudiology.com/",
   "clinic_name": "Pacific Audiology Clinic",
   "specialty_category": "Audiology & Hearing Care",
   "ownership_status": "Verified Independent",
@@ -47,26 +54,22 @@ Given any list of clinic URLs (from Google Maps scrapers, NPI registries, or CRM
   "emails": ["info@pacificaudiology.com"],
   "mx_dns_valid_emails": ["info@pacificaudiology.com"],
   "phones": ["+1-503-292-8700"],
-  "social_profiles": {
-    "facebook": ["https://www.facebook.com/..."]
-  },
+  "social_profiles": { "facebook": ["https://www.facebook.com/..."] },
   "medical_schema_types": ["LocalBusiness", "MedicalOrganization"],
+  "medical_organization_metadata": {},
   "pages_crawled": 3,
   "status_code": 200,
   "error": null
 }
 ```
 
----
+## Calling it from Python
 
-## 🛠️ Integration with n8n, Make.com & Python
-
-### 1. Python (`apify-client`)
 ```python
 from apify_client import ApifyClient
 
 client = ApifyClient("YOUR_APIFY_TOKEN")
-run = client.actor("thanh81646/us-healthcare-clinic-contact-enricher").call(
+run = client.actor("thanh81646/apify-us-healthcare-clinic-contact-enricher").call(
     run_input={
         "startUrls": [
             {"url": "https://pacificaudiology.com/"},
@@ -77,32 +80,21 @@ run = client.actor("thanh81646/us-healthcare-clinic-contact-enricher").call(
 )
 
 for clinic in client.dataset(run["defaultDatasetId"]).iterate_items():
-    print(clinic["clinic_name"], "->", clinic["ownership_status"], clinic["mx_dns_valid_emails"])
+    print(clinic["clinic_name"], clinic["ownership_status"], clinic["mx_dns_valid_emails"])
 ```
 
-### 2. n8n Workflow (`Google Maps Scraper -> Clinic Chain Filter -> HubSpot / Lemlist`)
-1. Trigger a Google Maps or NPI directory scrape in **n8n**.
-2. Pass extracted clinic `website` URLs to the **Apify** node running `us-healthcare-clinic-contact-enricher` with `excludeChainsFromOutput: true`.
-3. Route only **`Verified Independent`** practices with `mx_dns_valid_emails` directly into **HubSpot**, **Instantly**, **Smartlead**, or **Google Sheets**!
+The same actor ID works from the Apify node in n8n or the "Run an Actor" module in Make.com.
 
-### 3. Make.com Scenario
-1. Watch new healthcare leads in **Airtable / Google Sheets**.
-2. Call **Apify -> Run an Actor** (`us-healthcare-clinic-contact-enricher`) synchronously.
-3. Update the lead status column with `ownership_status`, `specialty_category`, and `mx_dns_valid_emails`.
+## Limitations
 
----
+- Static HTML only (no headless browser), so sites that render contacts with JavaScript return fewer results.
+- The chain list is hand-written and US-focused. It will miss chains that are not on it.
+- There is no NPI/NPPES lookup and no detection of booking widgets.
 
-## 💼 Need Custom Healthcare Lead Scrapers, NPI Enrichers, or AI Automations?
+## Author
 
-Built and maintained by **Trung Thanh Tran** (*Python, Playwright, n8n & AI Automation Engineer*):
+Trung Thanh Tran: [Upwork](https://www.upwork.com/freelancers/trungthanhtrandev) · [GitHub](https://github.com/Tthanh2k6) · [Apify](https://apify.com/thanh81646)
 
-- 🟢 **Hire me on Upwork (Custom Healthcare Lead Lists, Scrapers & AI Pipelines):** [upwork.com/freelancers/trungthanhtrandev](https://www.upwork.com/freelancers/trungthanhtrandev)
-- ⚡ **Order Fast-Turnaround Data & Scraping Gigs on Fiverr:** [fiverr.com/trungthnhtrn244](https://www.fiverr.com/trungthnhtrn244)
-- 📦 **Download the Complete Python, AI & n8n Scraper Toolkit Pro (6 CLI Engines + 3 Blueprints):** [trungthanh16.gumroad.com/l/python-ai-automation-n8n-scraper-toolkit-pro](https://trungthanh16.gumroad.com/l/python-ai-automation-n8n-scraper-toolkit-pro)
-- 💻 **GitHub Portfolio:** [github.com/Tthanh2k6](https://github.com/Tthanh2k6)
+## Legal note
 
----
-
-## ⚖️ Legal & Independence Disclaimer
-
-**Nominative Fair Use — Public Non-Authenticated Factual Data Only:** This Actor is an independent software utility that processes exclusively publicly accessible, non-authenticated healthcare clinic web pages at the user's explicit direction. It does not access patient portals, Protected Health Information (PHI / HIPAA records), login walls, or technical access controls, nor does it store or resell proprietary databases. Any corporate healthcare, DSO, or veterinary brand names referenced in ownership classification rules (such as Aspen Dental, Heartland Dental, Banfield, VCA, etc.) are trademarks of their respective owners and are used strictly for descriptive identification purposes (*nominative fair use*). Users act as independent Data Controllers and are solely responsible for ensuring their target URLs, rate limits, and downstream outreach comply with applicable laws (including CAN-SPAM, TCPA, GDPR, and CCPA).
+The actor only reads public, non-authenticated web pages at the user's direction. It does not access patient portals or any protected health information. Brand names in the chain list are trademarks of their owners and are used only to identify them. You are responsible for making sure your use, including any outreach, complies with applicable law (CAN-SPAM, TCPA, GDPR, CCPA).
