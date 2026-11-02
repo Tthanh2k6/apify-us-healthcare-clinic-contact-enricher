@@ -25,7 +25,7 @@
           "clinic_name": { "label": "Clinic Name", "format": "text" },
           "specialty_category": { "label": "Specialty", "format": "text" },
           "ownership_status": { "label": "Ownership Status", "format": "text" },
-          "mx_dns_valid_emails": { "label": "Verified Emails (DNS/MX)", "format": "array" },
+          "mx_dns_valid_emails": { "label": "Emails (domain has MX record)", "format": "array" },
           "phones": { "label": "Phone Numbers", "format": "array" },
           "social_profiles": { "label": "Social Profiles", "format": "object" },
           "medical_schema_types": { "label": "Schema.org Entities", "format": "array" },

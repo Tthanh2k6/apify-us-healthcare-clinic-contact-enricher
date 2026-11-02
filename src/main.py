@@ -1,9 +1,9 @@
 """
 Apify Store Actor: US Healthcare Clinic Contact, Schema & Chain Detector
 Scrapes & enriches independent US medical, dental, audiology, chiropractic, optometry,
-and veterinary clinic websites with DNS/MX-verified emails, phone numbers, social profiles
+and veterinary clinic websites with emails whose domain has an MX record (no mailbox check), phone numbers, social profiles
 (FB, IG, LI, YT, X), Schema.org MedicalOrganization metadata, and automatic Corporate
-Chain / DSO / Franchise Detection (Verified Independent vs Chain Excluded vs Needs Review).
+Chain / DSO / Franchise Detection (Likely Independent vs Chain Excluded vs Needs Review).
 """
 import asyncio
 import json
@@ -309,7 +309,7 @@ def evaluate_corporate_chain_ownership(
     Classifies clinic ownership into:
       - 'Chain Excluded' (Confirmed corporate DSO / MSO / retail healthcare chain or franchise)
       - 'Needs Review' (Regional multi-office group with >= 6 location subpages or ambiguous signals)
-      - 'Verified Independent' (Single-practice or local independent clinic with zero DSO/chain footprints)
+      - 'Likely Independent' (Single-practice or local independent clinic with zero DSO/chain footprints)
     """
     signals: List[str] = []
     score = 0.0
@@ -366,7 +366,7 @@ def evaluate_corporate_chain_ownership(
         return ("Chain Excluded", round(score, 2), signals)
     if score >= 0.45:
         return ("Needs Review", round(score, 2), signals)
-    return ("Verified Independent", 0.05, [])
+    return ("Likely Independent", 0.05, [])
 
 
 def discover_clinic_subpages(soup: BeautifulSoup, base_url: str) -> List[str]:

@@ -8,7 +8,7 @@ An Apify actor written in async Python (`httpx` + `BeautifulSoup4` + `dnspython`
 - social links for Facebook, Instagram, LinkedIn, YouTube and X/Twitter (up to 3 each);
 - Schema.org JSON-LD data for medical/local-business types (name, address, specialty, rating, `parentOrganization`);
 - a rough specialty category based on keywords;
-- an ownership guess: `Chain Excluded`, `Needs Review` or `Verified Independent`.
+- an ownership guess: `Chain Excluded`, `Needs Review` or `Likely Independent`.
 
 ## How the ownership guess works
 
@@ -19,7 +19,7 @@ It is a keyword heuristic, not a lookup in any registry:
 3. Franchise wording in the page text (for example "each office is independently owned and operated") raises the score.
 4. Internal store-locator links are counted: 5 or more location paths raise the score, 15 or more push it to "chain".
 
-A score of 0.80 or higher gives `Chain Excluded`, 0.45 to 0.80 gives `Needs Review`, and anything lower gives `Verified Independent`. "Verified Independent" only means that none of these signals matched. If a site cannot be fetched or answers with an HTTP error (4xx/5xx), the record comes back as `Needs Review` with the error message (or `HTTP <code>`) in `error`.
+A score of 0.80 or higher gives `Chain Excluded`, 0.45 to 0.80 gives `Needs Review`, and anything lower gives `Likely Independent`. "Likely Independent" only means that none of these signals matched. If a site cannot be fetched or answers with an HTTP error (4xx/5xx), the record comes back as `Needs Review` with the error message (or `HTTP <code>`) in `error`.
 
 ## Input
 
@@ -48,7 +48,7 @@ Runs on the Apify free tier are capped at 25 URLs.
   "input_url": "https://pacificaudiology.com/",
   "clinic_name": "Pacific Audiology Clinic",
   "specialty_category": "Audiology & Hearing Care",
-  "ownership_status": "Verified Independent",
+  "ownership_status": "Likely Independent",
   "chain_confidence_score": 0.05,
   "chain_signals": [],
   "emails": ["info@pacificaudiology.com"],
