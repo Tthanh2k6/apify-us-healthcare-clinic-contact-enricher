@@ -19,7 +19,7 @@ It is a keyword heuristic, not a lookup in any registry:
 3. Franchise wording in the page text (for example "each office is independently owned and operated") raises the score.
 4. Internal store-locator links are counted: 5 or more location paths raise the score, 15 or more push it to "chain".
 
-A score of 0.80 or higher gives `Chain Excluded`, 0.45 to 0.80 gives `Needs Review`, and anything lower gives `Verified Independent`. "Verified Independent" only means that none of these signals matched. If a site cannot be fetched, the record comes back as `Needs Review` with the error message in `error`.
+A score of 0.80 or higher gives `Chain Excluded`, 0.45 to 0.80 gives `Needs Review`, and anything lower gives `Verified Independent`. "Verified Independent" only means that none of these signals matched. If a site cannot be fetched or answers with an HTTP error (4xx/5xx), the record comes back as `Needs Review` with the error message (or `HTTP <code>`) in `error`.
 
 ## Input
 

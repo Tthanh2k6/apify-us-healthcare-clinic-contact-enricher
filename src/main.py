@@ -468,6 +468,10 @@ async def enrich_clinic_url(
             parent_org=schema_meta.get("parent_organization"),
             custom_keywords=custom_keywords,
         )
+        # A 4xx/5xx page (blocked, missing, server error) says nothing about ownership
+        http_error = f"HTTP {status_code}" if status_code >= 400 else None
+        if http_error:
+            ownership_status = "Needs Review"
 
         return {
             "url": final_url,
@@ -485,7 +489,7 @@ async def enrich_clinic_url(
             "medical_organization_metadata": schema_meta,
             "pages_crawled": pages_crawled,
             "status_code": status_code,
-            "error": None,
+            "error": http_error,
         }
     except Exception as exc:
         return {
