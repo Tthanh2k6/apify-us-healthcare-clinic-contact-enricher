@@ -1,5 +1,7 @@
 # US Healthcare Clinic Contact and Chain Detector (Apify Actor)
 
+**Try it on Apify Store:** https://apify.com/thanh81646/apify-us-healthcare-clinic-contact-enricher
+
 An Apify actor written in async Python (`httpx` + `BeautifulSoup4` + `dnspython`). You give it a list of US clinic websites (dental, audiology, veterinary, chiropractic, optometry and similar). For each site it fetches the homepage and up to two internal "contact/about/locations/team" pages, then returns:
 
 - email addresses found in the HTML and `mailto:` links, with obvious junk filtered out (asset filenames, `sentry.io`, `wixpress.com`, placeholder domains);
