@@ -93,6 +93,10 @@ The same actor ID works from the Apify node in n8n or the "Run an Actor" module 
 - The chain list is hand-written and US-focused. It will miss chains that are not on it.
 - There is no NPI/NPPES lookup and no detection of booking widgets.
 
+## Need a custom version?
+
+If you need extra fields, another website, scheduled runs into Google Sheets, Airtable or a webhook, or an n8n / Make workflow around this actor, email **ttrungthanh90@gmail.com** with the target site and the fields you need, and I will reply with a fixed quote. You can also message me through my [Apify profile](https://apify.com/thanh81646).
+
 ## Author
 
 Trung Thanh Tran: [Upwork](https://www.upwork.com/freelancers/trungthanhtrandev) · [GitHub](https://github.com/Tthanh2k6) · [Apify](https://apify.com/thanh81646)
