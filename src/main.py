@@ -147,6 +147,46 @@ DEFAULT_CLINIC_URLS = [
 ]
 
 
+
+def normalize_input_url(raw: Any) -> Optional[str]:
+    """Return an http(s) URL from a user-supplied value, or None if it is unusable.
+
+    Adds https:// when the scheme is missing (e.g. "example.com/contact").
+    """
+    if not isinstance(raw, str):
+        return None
+    candidate = raw.strip()
+    if not candidate or any(ch.isspace() for ch in candidate):
+        return None
+    if "://" not in candidate:
+        candidate = "https://" + candidate.lstrip("/")
+    parsed = urlparse(candidate)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc or "." not in parsed.netloc:
+        return None
+    return candidate
+
+
+def extract_start_urls(raw_urls: Any) -> List[str]:
+    """Pull usable URLs out of the startUrls input (dicts with "url", or plain strings)."""
+    if not isinstance(raw_urls, list):
+        return []
+    urls: List[str] = []
+    for item in raw_urls:
+        value = item.get("url") if isinstance(item, dict) else item
+        normalized = normalize_input_url(value)
+        if normalized:
+            urls.append(normalized)
+    return urls
+
+
+def coerce_int(value: Any, default: int, minimum: int = 1) -> int:
+    """int() that tolerates None / junk values from the input and enforces a minimum."""
+    try:
+        return max(minimum, int(value))
+    except (TypeError, ValueError):
+        return default
+
+
 class AsyncDomainMXChecker:
     """Validates email syntax + domain DNS MX (with A/AAAA fallback) and caches per domain."""
 
@@ -284,6 +324,20 @@ def parse_medical_json_ld(soup: BeautifulSoup) -> Dict[str, Any]:
     return {"schema_types": sorted(types), "metadata": meta}
 
 
+
+_TERM_CACHE: Dict[str, "re.Pattern[str]"] = {}
+
+
+def contains_term(haystack: str, term: str) -> bool:
+    """True when `term` appears in `haystack` and is not glued to other letters/digits,
+    so 'nva.com' matches 'www.nva.com' but not 'canva.com'."""
+    pat = _TERM_CACHE.get(term)
+    if pat is None:
+        pat = re.compile(r"(?<![a-z0-9])" + re.escape(term) + r"(?![a-z0-9])")
+        _TERM_CACHE[term] = pat
+    return pat.search(haystack) is not None
+
+
 def classify_specialty(clinic_name: str, text_lower: str, schema_types: List[str]) -> str:
     header_context = f"{clinic_name} {' '.join(schema_types)}".lower()
     body_sample = text_lower[:12000]
@@ -308,7 +362,7 @@ def evaluate_corporate_chain_ownership(
     """
     Classifies clinic ownership into:
       - 'Chain Excluded' (Confirmed corporate DSO / MSO / retail healthcare chain or franchise)
-      - 'Needs Review' (Regional multi-office group with >= 6 location subpages or ambiguous signals)
+      - 'Needs Review' (Regional multi-office group with >= 5 location subpages or ambiguous signals)
       - 'Likely Independent' (Single-practice or local independent clinic with zero DSO/chain footprints)
     """
     signals: List[str] = []
@@ -319,7 +373,7 @@ def evaluate_corporate_chain_ownership(
     for brand_name, indicators in CORPORATE_CHAIN_SIGNATURES.items():
         for ind in indicators:
             ind_l = ind.lower()
-            if ind_l in host or ind_l in html_lower:
+            if contains_term(host, ind_l) or contains_term(html_lower, ind_l):
                 signals.append(f"Matched corporate healthcare/DSO brand: {brand_name} ('{ind}')")
                 score = max(score, 0.96)
                 break
@@ -585,16 +639,13 @@ async def main() -> None:
             raw_urls = actor_input.get("startUrls") or DEFAULT_CLINIC_URLS
             follow_contact = bool(actor_input.get("followContactPages", True))
             exclude_chains = bool(actor_input.get("excludeChainsFromOutput", False))
-            custom_keywords = str(actor_input.get("customChainKeywords", ""))
-            concurrency = int(actor_input.get("maxConcurrency", 5))
-            max_items = int(actor_input.get("maxItems", 25))
+            custom_keywords = str(actor_input.get("customChainKeywords") or "")
+            concurrency = coerce_int(actor_input.get("maxConcurrency"), 5)
+            max_items = coerce_int(actor_input.get("maxItems"), 25)
 
-            urls = [
-                item["url"] if isinstance(item, dict) else str(item)
-                for item in raw_urls
-                if item and (isinstance(item, str) or item.get("url"))
-            ]
+            urls = extract_start_urls(raw_urls)
             if not urls:
+                Actor.log.warning("No usable URLs in startUrls; falling back to the built-in sample URLs.")
                 urls = [u["url"] for u in DEFAULT_CLINIC_URLS]
 
             was_capped = False
