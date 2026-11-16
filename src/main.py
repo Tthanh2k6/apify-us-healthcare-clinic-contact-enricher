@@ -225,6 +225,10 @@ class AsyncDomainMXChecker:
         return deliverable
 
 
+COMMON_TLDS = ("com", "net", "org", "edu", "gov", "us", "info", "biz", "co", "io")
+LONG_TLDS = {"health", "care", "dental", "vet", "clinic", "doctor", "hospital", "online", "site", "biz", "info", "com", "net", "org", "edu", "gov", "us", "co", "io", "coop"}
+
+
 def extract_clean_emails(raw_candidates: List[str]) -> List[str]:
     cleaned: Set[str] = set()
     for raw in raw_candidates:
@@ -236,6 +240,11 @@ def extract_clean_emails(raw_candidates: List[str]) -> List[str]:
             continue
         local, domain = parts
         if len(local) > 64 or domain in JUNK_EMAIL_DOMAINS or "sentry" in domain or "wixpress" in domain:
+            continue
+        # Text glued to an address in page source ("...@clinic.comHours Mon") gives a fake TLD like
+        # "comhours"; drop it when a common TLD is followed by more letters.
+        tld = domain.rsplit(".", 1)[-1]
+        if tld not in LONG_TLDS and any(tld.startswith(t) and len(tld) > len(t) for t in COMMON_TLDS):
             continue
         cleaned.add(email)
     return sorted(cleaned)

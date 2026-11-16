@@ -138,3 +138,8 @@ def test_contains_term_respects_word_edges():
     assert not contains_term("www.canva.com", "nva.com")
     assert not contains_term("visit shear.com today", "hear.com")
     assert contains_term("part of aspen dental group", "aspen dental")
+
+
+def test_clean_emails_drops_text_glued_onto_the_tld():
+    raw = ["info@pacificaudiology.com", "usinfo@pacificaudiology.comhoursmond", "hi@smile.dental", "a@b.co"]
+    assert extract_clean_emails(raw) == ["a@b.co", "hi@smile.dental", "info@pacificaudiology.com"]

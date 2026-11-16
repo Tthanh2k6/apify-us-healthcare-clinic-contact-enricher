@@ -1,8 +1,8 @@
 # US Healthcare Clinic Contact and Chain Detector (Apify Actor)
 
-**Try it on Apify Store:** https://apify.com/thanh81646/apify-us-healthcare-clinic-contact-enricher
+On Apify Store: https://apify.com/thanh81646/apify-us-healthcare-clinic-contact-enricher
 
-**Write-up:** [Detecting Chain Ownership on US Clinic Websites with Python](https://dev.to/tthanh2k6/detecting-chain-ownership-on-us-clinic-websites-with-python-513) (how the chain score works, plus NPPES NPI and booking-widget ideas)
+Write-up: [Detecting Chain Ownership on US Clinic Websites with Python](https://dev.to/tthanh2k6/detecting-chain-ownership-on-us-clinic-websites-with-python-513) (how the chain score works, plus NPPES NPI and booking-widget ideas)
 
 An Apify actor written in async Python (`httpx` + `BeautifulSoup4` + `dnspython`). You give it a list of US clinic websites (dental, audiology, veterinary, chiropractic, optometry and similar). For each site it fetches the homepage and up to two internal "contact/about/locations/team" pages, then returns:
 
@@ -44,23 +44,33 @@ A score of 0.80 or higher gives `Chain Excluded`, 0.45 to 0.80 gives `Needs Revi
 
 Runs on the Apify free tier are capped at 25 URLs.
 
-## Output record (example shape)
+## What it returned on the sample input
+
+Local run on 16 Nov 2026 (`python -m src`, the three URLs above):
+
+| URL | Ownership | Score | Emails (MX-valid) | Phones |
+| --- | --- | ---: | --- | --- |
+| pacificaudiology.com | Likely Independent | 0.05 | info@pacificaudiology.com | +1-503-364-2828, +1-503-364-4327 |
+| brooklyndentalstudio.com | Likely Independent | 0.05 | none on the site | +1-646-844-4479 |
+| banfield.com | Chain Excluded | 0.96 | 6 support addresses | +1-847-816-4667, +1-866-894-7927 |
+
+Banfield is caught by the chain list (`Matched corporate healthcare/DSO brand: Banfield Pet Hospital (Mars Veterinary Health) ('banfield.com')`). Its page also contains `email@emailserver.com`, a form placeholder; it shows up in `emails` but not in `mx_dns_valid_emails`, which is why the MX column exists.
+
+One record in full (trimmed `medical_organization_metadata`, whose fields were all null for this site):
 
 ```json
 {
   "url": "https://pacificaudiology.com/",
-  "input_url": "https://pacificaudiology.com/",
-  "clinic_name": "Pacific Audiology Clinic",
+  "clinic_name": "Pacific Audiology Center",
   "specialty_category": "Audiology & Hearing Care",
   "ownership_status": "Likely Independent",
   "chain_confidence_score": 0.05,
   "chain_signals": [],
   "emails": ["info@pacificaudiology.com"],
   "mx_dns_valid_emails": ["info@pacificaudiology.com"],
-  "phones": ["+1-503-292-8700"],
-  "social_profiles": { "facebook": ["https://www.facebook.com/..."] },
-  "medical_schema_types": ["LocalBusiness", "MedicalOrganization"],
-  "medical_organization_metadata": {},
+  "phones": ["+1-503-364-2828", "+1-503-364-4327"],
+  "social_profiles": { "facebook": ["https://www.facebook.com/PacAudCtr"] },
+  "medical_schema_types": ["BreadcrumbList", "WebPage", "WebSite"],
   "pages_crawled": 3,
   "status_code": 200,
   "error": null
@@ -94,10 +104,11 @@ The same actor ID works from the Apify node in n8n or the "Run an Actor" module 
 - Static HTML only (no headless browser), so sites that render contacts with JavaScript return fewer results.
 - The chain list is hand-written and US-focused. It will miss chains that are not on it.
 - There is no NPI/NPPES lookup and no detection of booking widgets.
+- `pytest` runs 16 offline tests (email and phone cleaning, chain scoring, JSON-LD parsing, input handling).
 
 ## Need a custom version?
 
-If you need extra fields, another website, scheduled runs into Google Sheets, Airtable or a webhook, or an n8n / Make workflow around this actor, email **ttrungthanh90@gmail.com** with the target site and the fields you need, and I will reply with a fixed quote. You can also message me through my [Apify profile](https://apify.com/thanh81646).
+If you need extra fields, another website, scheduled runs into Google Sheets, Airtable or a webhook, or an n8n / Make workflow around this actor, email ttrungthanh90@gmail.com with the target site and the fields you need, and I will reply with a fixed quote. You can also message me through my [Apify profile](https://apify.com/thanh81646).
 
 ## Author
 
